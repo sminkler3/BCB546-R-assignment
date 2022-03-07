@@ -1,0 +1,169 @@
+---
+title: "R_assignment_markdown"
+output: html_document
+date: '2022-03-06'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+## Data Inspection
+I first downloaded the files from Github for the assignment. 
+
+```{r}
+genotypes<-read.delim("https://raw.githubusercontent.com/sminkler3/BCB546-Spring2022/main/assignments/UNIX_Assignment/fang_et_al_genotypes.txt", header=T)
+snps<-read.delim("https://raw.githubusercontent.com/sminkler3/BCB546-Spring2022/main/assignments/UNIX_Assignment/snp_position.txt", header=T)
+```
+
+Then I looked at the structure of each file type (genotypes and snps, bur just showing genotypes below)
+```{r}
+typeof(genotype)
+class(genotype)
+ncol(genotype)
+nrow(genotype)
+```
+Genotype file has 986 columns and 2782 rows. Snps file has 15 columns and 983 rows.
+## Data Processing
+I then trimmed the snps file to obtain just the columns I wanted.
+```{r}
+trimmed_snps<-snps[c("SNP_ID","Chromosome", "Position")]
+```
+Then I filtered the genotypes file for group IDs we were interested in for both maize and teosinte.
+```{r}
+maize<-filter(genotypes, `Group` == "ZMMIL" | `Group` == "ZMMLR" | `Group` == "ZMMMR")
+teosinte<-filter(genotypes, `Group` == "ZMPBA" | `Group` == "ZMPIL" | `Group` == "ZMPJA")
+```
+Then I transposed the files together.
+```{r}
+maize_transposed<-as.data.frame(t(maize))
+teosinte_transposed<-as.data.frame(t(teosinte))
+```
+I merged the files together and used the merge command to place SNPs in the first poisition in order to have the SNP_ID, Chromosome, and Position as the first three columns in the merged file.
+```{r}
+joined_maize<-merge(trimmed_snps, maize_transposed, by.x = 1, by.y = 0)
+joined_teosinte<-merge(trimmed_snps, teosinte_transposed, by.x = 1, by.y = 0)
+```
+I ordered the files into increasing and decreasing position.
+```{r}
+ord_maize_inc <- joined_maize[order(joined_maize$Position, decreasing=FALSE),]
+ord_maize_dec <- joined_maize[order(joined_maize$Position, decreasing=TRUE),]
+ord_teo_inc <- joined_teosinte[order(joined_teosinte$Position, decreasing=FALSE),]
+ord_teo_dec <- joined_teosinte[order(joined_teosinte$Position, decreasing=TRUE),]
+```
+Then I placed ? and - in places of missing values.
+```{r}
+inc_teosin_ques <- replace(ord_teo_inc, is.na(ord_teo_inc), "?")
+inc_maize_ques <- replace(ord_maize_inc, is.na(ord_maize_inc), "?")
+dec_maize_dash <- replace(ord_maize_inc, is.na(ord_maize_inc), "-")
+dec_teosin_dash <- replace(ord_teo_inc, is.na(ord_teo_inc), "-")
+```
+Next I separated out each chromosome into it's own file (increasing and decreasing)
+Increasing with "?" for missing values:
+```{r}
+Chr1_maize_inc <- subset(inc_maize_ques, Chromosome=="1")
+Chr2_maize_inc <- subset(inc_maize_ques, Chromosome=="2")
+Chr3_maize_inc <- subset(inc_maize_ques, Chromosome=="3")
+Chr4_maize_inc <- subset(inc_maize_ques, Chromosome=="4")
+Chr5_maize_inc <- subset(inc_maize_ques, Chromosome=="5")
+Chr6_maize_inc <- subset(inc_maize_ques, Chromosome=="6")
+Chr7_maize_inc <- subset(inc_maize_ques, Chromosome=="7")
+Chr8_maize_inc <- subset(inc_maize_ques, Chromosome=="8")
+Chr9_maize_inc <- subset(ord_maize_inc, Chromosome=="9")
+Chr10_maize_inc <- subset(inc_maize_ques, Chromosome=="10")
+Chr1_teo_inc <- subset(inc_teosin_ques, Chromosome=="1")
+Chr2_teo_inc <- subset(inc_teosin_ques, Chromosome=="2")
+Chr3_teo_inc <- subset(inc_teosin_ques, Chromosome=="3")
+Chr4_teo_inc <- subset(inc_teosin_ques, Chromosome=="4")
+Chr5_teo_inc <- subset(inc_teosin_ques, Chromosome=="5")
+Chr6_teo_inc <- subset(inc_teosin_ques, Chromosome=="6")
+Chr7_teo_inc <- subset(inc_teosin_ques, Chromosome=="7")
+Chr8_teo_inc <- subset(inc_teosin_ques, Chromosome=="8")
+Chr9_teo_inc <- subset(inc_teosin_ques, Chromosome=="9")
+Chr10_teo_inc <- subset(inc_teosin_ques, Chromosome=="10")
+```
+Decreasing with "-" for missing values:
+```{r}
+Chr1_maize_dec <- subset(dec_maize_dash, Chromosome=="1")
+Chr2_maize_dec <- subset(dec_maize_dash, Chromosome=="2")
+Chr3_maize_dec <- subset(dec_maize_dash, Chromosome=="3")
+Chr4_maize_dec <- subset(dec_maize_dash, Chromosome=="4")
+Chr5_maize_dec <- subset(dec_maize_dash, Chromosome=="5")
+Chr6_maize_dec <- subset(dec_maize_dash, Chromosome=="6")
+Chr7_maize_dec <- subset(dec_maize_dash, Chromosome=="7")
+Chr8_maize_dec <- subset(dec_maize_dash, Chromosome=="8")
+Chr9_maize_dec <- subset(dec_maize_dash, Chromosome=="9")
+Chr10_maize_dec <- subset(ord_maize_dec, Chromosome=="10")
+Chr1_teo_dec <- subset(dec_teosin_dash, Chromosome=="1")
+Chr2_teo_dec <- subset(dec_teosin_dash, Chromosome=="2")
+Chr3_teo_dec <- subset(dec_teosin_dash, Chromosome=="3")
+Chr4_teo_dec <- subset(dec_teosin_dash, Chromosome=="4")
+Chr5_teo_dec <- subset(dec_teosin_dash, Chromosome=="5")
+Chr6_teo_dec <- subset(dec_teosin_dash, Chromosome=="6")
+Chr7_teo_dec <- subset(dec_teosin_dash, Chromosome=="7")
+Chr8_teo_dec <- subset(dec_teosin_dash, Chromosome=="8")
+Chr9_teo_dec <- subset(dec_teosin_dash, Chromosome=="9")
+Chr10_teo_dec <- subset(dec_teosin_dash, Chromosome=="10")
+```
+Covered files to upload to Github. Just showing increasing maize chromosome files below, but was done for all files. 
+```{r}
+write.csv(Chr1_maize_inc, file = "Chr1_maize_inc.csv")
+write.csv(Chr2_maize_inc, file = "Chr2_maize_inc.csv")
+write.csv(Chr3_maize_inc, file = "Chr3_maize_inc.csv")
+write.csv(Chr4_maize_inc, file = "Chr4_maize_inc.csv")
+write.csv(Chr5_maize_inc, file = "Chr5_maize_inc.csv")
+write.csv(Chr6_maize_inc, file = "Chr6_maize_inc.csv")
+write.csv(Chr7_maize_inc, file = "Chr7_maize_inc.csv")
+write.csv(Chr8_maize_inc, file = "Chr8_maize_inc.csv")
+write.csv(Chr9_maize_inc, file = "Chr9_maize_inc.csv") 
+write.csv(Chr10_maize_inc, file = "Chr10_maize_inc.csv")
+```
+## Data Visualization
+I downloaded necessary functions.
+```{r}
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+```
+## SNPs per chromosome
+```{r}
+melted_geno<-melt(genotype, id = c("Sample_ID", "Group"))
+melted_snps<-melt(trimmed_snps, id = c("SNP_ID", "Chromosome"))
+```
+```{r}
+joined_genotypes<-merge(melted_snps, melted_geno, by.x = 1, by.y = 3)
+```
+```{r}
+ggplot(joined_genotypes) + geom_bar(aes(x=Chromosome, fill=Chromosome)) + ggtitle("Number of SNPs/Chromosome") + labs(x="Chromosome",y="SNP Count")
+```
+The chromosome with the highest number of SNPs was chromosome 1.
+## Heterozygosity 
+Melted and joined the data for graphing.
+```{r}
+melted_geno<-melt(genotype, id = c("Sample_ID", "Group"))
+melted_snps<-melt(trimmed_snps, id = c("SNP_ID", "Chromosome"))
+colnames(melted_geno)[3:4] <- c("SNP_ID","SNP_Seq")
+joined_melted<-merge(melted_snps, melted_geno, by.x = 1, by.y = 3)
+joined_melted<-joined_melted[,-3]
+```
+I added SNP_Status column and coding ?/? to NA, Homozygous to Hom, and Heterozygous to Het
+```{r}
+joined_melted$SNP_Status<-"NA"
+joined_melted$SNP_Status<-joined_melted$SNP_Seq
+joined_melted$SNP_Status[joined_melted$SNP_Status=="?/?"]<- "NA"
+joined_melted$SNP_Status[joined_melted$SNP_Status=="A/A" | joined_melted$SNP_Status=="C/C" | joined_melted$SNP_Status=="G/G" | joined_melted$SNP_Status=="T/T"] <- "Hom"
+joined_melted$SNP_Status[joined_melted$SNP_Status!="Hom" & joined_melted$SNP_Status!="NA"] <- "Het"
+recoded_genotype<-joined_melted
+sort_recoded<-arrange(recoded_geno, Group, Sample_ID)
+```
+Graphing
+```{r}
+ggplot(recoded_genotype) + geom_bar(aes(x=SNP_Status, fill=Group), position = "fill") + ggtitle("Distribution of Groups Among SNPs") + labs(x="SNP Status",y="Group Contribution")
+ggplot(recoded_genotype) + geom_bar(aes(x=Group, fill=SNP_Status), position = "fill") + ggtitle("SNP Status Per Group") + labs(x="Group",y="SNP Status Counts")
+```
+## My Visualization
+I ploted homozygous loci by species group.
+```{r}
+ggplot(recoded_genotype) + geom_bar(aes(x=Group)) + ggtitle("Homozygous Loci vs. Species") + labs(x="Group",y="Hom")
+```
