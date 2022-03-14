@@ -50,12 +50,15 @@ joined_maize<-merge(trimmed_snps, maize_transposed, by.x = 1, by.y = 0)
 joined_teosinte<-merge(trimmed_snps, teosinte_transposed, by.x = 1, by.y = 0)
 ```
 I ordered the files into increasing and decreasing position.
+
 ```{r}
 ord_maize_inc <- joined_maize[order(joined_maize$Position, decreasing=FALSE),]
 ord_maize_dec <- joined_maize[order(joined_maize$Position, decreasing=TRUE),]
 ord_teo_inc <- joined_teosinte[order(joined_teosinte$Position, decreasing=FALSE),]
 ord_teo_dec <- joined_teosinte[order(joined_teosinte$Position, decreasing=TRUE),]
 ```
+
+
 Then I placed ? and - in places of missing values.
 ```{r}
 inc_teosin_ques <- replace(ord_teo_inc, is.na(ord_teo_inc), "?")
@@ -174,8 +177,8 @@ I ploted homozygous loci by species group.
 ```{r}
 ggplot(recoded_genotype) + geom_bar(aes(x=Group)) + ggtitle("Homozygous Loci vs. Species") + labs(x="Group",y="Hom")
 ```
-#Other comments: Your output files did load to my computer, which is good. However, some of them had no data, only headers. And the ones that did have data were not correctly sorted by position. 
-#It looks like your positions sorted alphabetically, not numerically, probably because your "Position" column was in character form. 
+#Other comments: Your output files did load to my computer, which is good. However, the maize_inc files seemed to have much less data than the teosinte files. This may not be an issue for this particular assignment but it might be better to have more consistent output files in other projects. So far I haven't found the source of this inconsistency. 
+#Additionally, it looks like your positions sorted alphabetically, not numerically, probably because your "Position" column was in character form. 
 #Changing the "Position" column to numeric via as.numeric() would probably solve this problem. 
 #But overall your script is good! It ran smoothly on my computer and your visualizations are nice. 
 
