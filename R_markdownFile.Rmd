@@ -174,6 +174,9 @@ I ploted homozygous loci by species group.
 ```{r}
 ggplot(recoded_genotype) + geom_bar(aes(x=Group)) + ggtitle("Homozygous Loci vs. Species") + labs(x="Group",y="Hom")
 ```
-
+#Other comments: Your output files did load to my computer, which is good. However, some of them had no data, only headers. And the ones that did have data were not correctly sorted by position. 
+#It looks like your positions sorted alphabetically, not numerically, probably because your "Position" column was in character form. 
+#Changing the "Position" column to numeric via as.numeric() would probably solve this problem. 
+#But overall your script is good! It ran smoothly on my computer and your visualizations are nice. 
 
 
