@@ -1,0 +1,341 @@
+---
+title: "R_assignment_markdown"
+output: html_document
+date: '2022-03-06'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+## Data Inspection
+I first downloaded the files from Github for the assignment. 
+
+<!-- You can optionally retrieve the files directly from the class repository 
+Ex:
+``
+genotype <- read.delim("https://github.com/EEOB-BioData/BCB546-Spring2022/blob/9a177ced4616229470a9fa08bda50b604dbd2b8e/assignments/UNIX_Assignment/fang_et_al_genotypes.txt")
+``
+-->
+
+```{r}
+genotype<-read.delim("https://raw.githubusercontent.com/sminkler3/BCB546-Spring2022/main/assignments/UNIX_Assignment/fang_et_al_genotypes.txt", header=T)
+snps<-read.delim("https://raw.githubusercontent.com/sminkler3/BCB546-Spring2022/main/assignments/UNIX_Assignment/snp_position.txt", header=T)
+```
+
+Then I looked at the structure of each file type (genotype and snps, but just showing genotype below)
+```{r}
+typeof(genotype)
+class(genotype)
+ncol(genotype)
+nrow(genotype)
+```
+Genotype file has 986 columns and 2782 rows. Snps file has 15 columns and 983 rows.
+## Data Processing
+I then trimmed the snps file to obtain just the columns I wanted.
+
+<!-- Even if it works without, usually a comma is used in [row,column] to denote whether your working with rows or columns.
+Ex
+``
+trimmed_snps <- snps[,c("SNP_ID","Chromosome", "Position")]
+``
+-->
+
+```{r}
+trimmed_snps<-snps[c("SNP_ID","Chromosome", "Position")]
+```
+Then I filtered the genotypes file for group IDs we were interested in for both maize and teosinte.
+
+<!-- There is something going on with the quotations here
+
+This should be correct as you have it
+``
+maize<-filter(genotype, "Group" == "ZMMIL" | "Group" == "ZMMLR" | "Group" == "ZMMMR")
+teosinte<-filter(genotype, "Group" == "ZMPBA" | "Group" == "ZMPIL" | "Group" == "ZMPJA")
+``
+Although even when I run the above lines, I'm getting some type of time series data structure. It seems to be because stats::filter() is the default since your scripts haven't loaded any additional packages and this function expects a time series.
+
+Alternatively if you load dplyr and use the filter() in that package, you don't need to quote Group. Additionally, the %in% function is helpful when you want to match values against a list. The %>% pipe is loaded with dplyr and functions similarly to the UNIX pipe.
+
+I'll use the files from this for the subsequent steps
+``
+library(dplyr)
+maize <- genotype %>%
+   filter(Group %in% c("ZMMIL", "ZMMLR", "ZMMR"))
+teosinte <- genotype %>%
+   filter(Group %in% c("ZMPBA", "ZMPIL", "ZMPJA"))
+``
+-->
+```{r}
+maize<-filter(genotype, "Group" == "ZMMIL" | "Group"== ZMMLR" | "Group" == "ZMMMR")
+teosinte<-filter(genotype, "Group"" == "ZMPBA" | "Group" == "ZMPIL" | "Group" == "ZMPJA")
+```
+Then I transposed the files together.
+
+<!-- If you use pipes like in the above example this could be easily added to the previous step. The data.frame() conversion may be unnecessary since everything should fine in a character vector.
+
+``
+library(dplyr)
+maize_transposed <- genotype %>%
+   filter(Group %in% c("ZMMIL", "ZMMLR", "ZMMR")) %>%
+   t() %>%
+   data.frame()
+teosinte_transposed <- genotype %>%
+   filter(Group %in% c("ZMPBA", "ZMPIL", "ZMPJA")) %>%
+   t() %>%
+   data.frame()
+``
+-->
+```{r}
+maize_transposed<-as.data.frame(t(maize))
+teosinte_transposed<-as.data.frame(t(teosinte))
+```
+I merged the files together and used the merge command to place SNPs in the first poisition in order to have the SNP_ID, Chromosome, and Position as the first three columns in the merged file.
+
+<!-- This should be reordered right now your using variables before they exist. I would recommend against transforming the whole position column to numeric as there are currently character values such as "multiple" stored in that column. You get the "NAs introduced by coercion" warning because information is getting written over by NAs
+
+``
+joined_maize<-merge(trimmed_snps, maize_transposed, by.x = 1, by.y = 0)
+joined_teosinte<-merge(trimmed_snps, teosinte_transposed, by.x = 1, by.y = 0)
+
+# joined_maize$Position = as.numeric(as.character(joined_maize$Position))
+# joined_teosinte$Position = as.numeric(as.character(joined_teosinte$Position)) ## added this in from Grace's review to turn my position column into a numeric column.
+
+``
+-->
+
+```{r}
+joined_maize$Position = as.numeric(as.character(joined_maize$Position))
+joined_teosinte$Position = as.numeric(as.character(joined_teosinte$Position)) ## added this in from Grace's review to turn my position column into a numeric column.
+joined_maize<-merge(trimmed_snps, maize_transposed, by.x = 1, by.y = 0)
+joined_teosinte<-merge(trimmed_snps, teosinte_transposed, by.x = 1, by.y = 0)
+```
+I ordered the files into increasing and decreasing position.
+
+<!-- Not using as.numeric() in the previous step can be overcame by using it here without writing over data. You'll get several warning messages here but its OK because data isn't being written over.
+
+``
+ord_maize_inc <- joined_maize[order(as.numeric(joined_maize$Position), decreasing=FALSE),]
+ord_maize_dec <- joined_maize[order(as.numeric(joined_maize$Position), decreasing=TRUE),]
+ord_teo_inc <- joined_teosinte[order(as.numeric(joined_teosinte$Position), decreasing=FALSE),]
+ord_teo_dec <- joined_teosinte[order(as.numeric(joined_teosinte$Position), decreasing=TRUE),]
+``
+-->
+```{r}
+ord_maize_inc <- joined_maize[order(joined_maize$Position, decreasing=FALSE),]
+ord_maize_dec <- joined_maize[order(joined_maize$Position, decreasing=TRUE),]
+ord_teo_inc <- joined_teosinte[order(joined_teosinte$Position, decreasing=FALSE),]
+ord_teo_dec <- joined_teosinte[order(joined_teosinte$Position, decreasing=TRUE),]
+```
+Then I placed ? and - in places of missing values.
+
+<!-- In order for data that was "missing" from the original document to be recognized as NA, blank cells need to be assigned as NA when the document is read in with the (na.strings = "") option. Otherwise the replace() on NA cells won't be replacing anything if the character positions are no longer changed to NAs in the previous steps.
+Ex:
+``
+genotype<-read.delim("https://raw.githubusercontent.com/sminkler3/BCB546-Spring2022/main/assignments/UNIX_Assignment/fang_et_al_genotypes.txt", header=T, na.strings = "")
+snps<-read.delim("https://raw.githubusercontent.com/sminkler3/BCB546-Spring2022/main/assignments/UNIX_Assignment/snp_position.txt", header=T, na.strings = "")
+``
+Make sure you do everything to each data set the same. Right now your not replacing NAs with "-" in the descending data frame but you are in the ascending data sets with ?. To fix that just add the replace() step for the dec objects. I assume you intended to use the "ord_x_dec" versions of the ordering object when assigning to "dec_x_dash" object. Additionally the ">" preceding dec_teosin_dash needs to be removed. 
+Ex:
+``
+inc_teosin_ques <- replace(ord_teo_inc, is.na(ord_teo_inc), "?")
+inc_maize_ques <- replace(ord_maize_inc, is.na(ord_maize_inc), "?")
+
+dec_maize_dash <- replace(ord_maize_dec, is.na(ord_maize_dec), "-")
+dec_teosin_dash <- replace(ord_teo_dec, is.na(ord_teo_dec), "-")
+dec_maize_dash <- data.frame(lapply(dec_maize_dash, gsub, pattern = "[?]", replacement = "-"))
+dec_teosin_dash <- data.frame(lapply(dec_teosin_dash, gsub, pattern = "[?]", replacement = "-"))
+``
+-->
+```{r}
+inc_teosin_ques <- replace(ord_teo_inc, is.na(ord_teo_inc), "?")
+inc_maize_ques <- replace(ord_maize_inc, is.na(ord_maize_inc), "?")
+dec_maize_dash <- data.frame(lapply(ord_maize_inc, gsub, pattern = "[?]", replacement = "-"))
+> dec_teosin_dash <- data.frame(lapply(ord_teo_inc, gsub, pattern = "[?]", replacement = "-"))
+```
+Next I separated out each chromosome into it's own file (increasing and decreasing)
+Increasing with "?" for missing values:
+
+<!-- This works too but an easy way to loop it would be. I don't know if it was intentional to use a different data.frame with Chromosome 10 in your script as written.
+``
+for (i in 1:10){
+  assign(paste("Chr", i, "_maize_inc", sep=""), subset(inc_maize_ques, Chromosome==i))
+  assign(paste("Chr", i, "_teo_inc", sep=""), subset(inc_teosin_ques, Chromosome==i))
+  assign(paste("Chr", i, "_maize_dec", sep=""), subset(dec_maize_dash, Chromosome==i))
+  assign(paste("Chr", i, "_teo_dec", sep=""), subset(dec_teosin_dash, Chromosome==i))
+}
+``
+Or if you want to write directly a pipe could help do this easily without creating so many objects in your environment. Just make sure you have loaded the dplyr library. If you don't want the row names included that can be designated at this step too.
+``
+for (i in 1:10){
+  subset(inc_maize_ques, Chromosome==i) %>% write.csv(., file = paste("Chr", i, "_maize_inc.csv", sep=""), row.names=FALSE)
+  subset(inc_teosin_ques, Chromosome==i) %>% write.csv(., file = paste("Chr", i, "_teo_inc.csv", sep=""), row.names=FALSE)
+  subset(dec_maize_dash, Chromosome==i) %>% write.csv(., file =   paste("Chr", i, "_maize_dec.csv", sep=""), row.names=FALSE)
+  subset(dec_teosin_dash, Chromosome==i) %>% write.csv(., file = paste("Chr", i, "_teo_dec.csv", sep=""), row.names=FALSE)
+}
+``
+Regardless, please make sure to include a step to set the working directory or else files will save the the root directory by default. Ideally this would be one of the first steps in the file.
+Ex:
+``
+setwd("Desktop/BCB546_2022/R_Review1/")
+``
+-->
+
+```{r}
+Chr1_maize_inc <- subset(inc_maize_ques, Chromosome=="1")
+Chr2_maize_inc <- subset(inc_maize_ques, Chromosome=="2")
+Chr3_maize_inc <- subset(inc_maize_ques, Chromosome=="3")
+Chr4_maize_inc <- subset(inc_maize_ques, Chromosome=="4")
+Chr5_maize_inc <- subset(inc_maize_ques, Chromosome=="5")
+Chr6_maize_inc <- subset(inc_maize_ques, Chromosome=="6")
+Chr7_maize_inc <- subset(inc_maize_ques, Chromosome=="7")
+Chr8_maize_inc <- subset(inc_maize_ques, Chromosome=="8")
+Chr9_maize_inc <- subset(ord_maize_inc, Chromosome=="9")
+Chr10_maize_inc <- subset(inc_maize_ques, Chromosome=="10")
+Chr1_teo_inc <- subset(inc_teosin_ques, Chromosome=="1")
+Chr2_teo_inc <- subset(inc_teosin_ques, Chromosome=="2")
+Chr3_teo_inc <- subset(inc_teosin_ques, Chromosome=="3")
+Chr4_teo_inc <- subset(inc_teosin_ques, Chromosome=="4")
+Chr5_teo_inc <- subset(inc_teosin_ques, Chromosome=="5")
+Chr6_teo_inc <- subset(inc_teosin_ques, Chromosome=="6")
+Chr7_teo_inc <- subset(inc_teosin_ques, Chromosome=="7")
+Chr8_teo_inc <- subset(inc_teosin_ques, Chromosome=="8")
+Chr9_teo_inc <- subset(inc_teosin_ques, Chromosome=="9")
+Chr10_teo_inc <- subset(inc_teosin_ques, Chromosome=="10")
+```
+Decreasing with "-" for missing values:
+```{r}
+Chr1_maize_dec <- subset(dec_maize_dash, Chromosome=="1")
+Chr2_maize_dec <- subset(dec_maize_dash, Chromosome=="2")
+Chr3_maize_dec <- subset(dec_maize_dash, Chromosome=="3")
+Chr4_maize_dec <- subset(dec_maize_dash, Chromosome=="4")
+Chr5_maize_dec <- subset(dec_maize_dash, Chromosome=="5")
+Chr6_maize_dec <- subset(dec_maize_dash, Chromosome=="6")
+Chr7_maize_dec <- subset(dec_maize_dash, Chromosome=="7")
+Chr8_maize_dec <- subset(dec_maize_dash, Chromosome=="8")
+Chr9_maize_dec <- subset(dec_maize_dash, Chromosome=="9")
+Chr10_maize_dec <- subset(ord_maize_dec, Chromosome=="10")
+Chr1_teo_dec <- subset(dec_teosin_dash, Chromosome=="1")
+Chr2_teo_dec <- subset(dec_teosin_dash, Chromosome=="2")
+Chr3_teo_dec <- subset(dec_teosin_dash, Chromosome=="3")
+Chr4_teo_dec <- subset(dec_teosin_dash, Chromosome=="4")
+Chr5_teo_dec <- subset(dec_teosin_dash, Chromosome=="5")
+Chr6_teo_dec <- subset(dec_teosin_dash, Chromosome=="6")
+Chr7_teo_dec <- subset(dec_teosin_dash, Chromosome=="7")
+Chr8_teo_dec <- subset(dec_teosin_dash, Chromosome=="8")
+Chr9_teo_dec <- subset(dec_teosin_dash, Chromosome=="9")
+Chr10_teo_dec <- subset(dec_teosin_dash, Chromosome=="10")
+```
+Covered files to upload to Github. 
+```{r}
+write.csv(Chr1_maize_inc, file = "Chr1_maize_inc.csv")
+write.csv(Chr2_maize_inc, file = "Chr2_maize_inc.csv")
+write.csv(Chr3_maize_inc, file = "Chr3_maize_inc.csv")
+write.csv(Chr4_maize_inc, file = "Chr4_maize_inc.csv")
+write.csv(Chr5_maize_inc, file = "Chr5_maize_inc.csv")
+write.csv(Chr6_maize_inc, file = "Chr6_maize_inc.csv")
+write.csv(Chr7_maize_inc, file = "Chr7_maize_inc.csv")
+write.csv(Chr8_maize_inc, file = "Chr8_maize_inc.csv")
+write.csv(Chr9_maize_inc, file = "Chr9_maize_inc.csv") 
+write.csv(Chr10_maize_inc, file = "Chr10_maize_inc.csv")
+write.csv(Chr1_maize_dec, file = "Chr1_maize_dec.csv")
+write.csv(Chr2_maize_dec, file = "Chr2_maize_dec.csv")
+write.csv(Chr3_maize_dec, file = "Chr3_maize_dec.csv")
+write.csv(Chr4_maize_dec, file = "Chr4_maize_dec.csv")
+write.csv(Chr5_maize_dec, file = "Chr5_maize_dec.csv")
+write.csv(Chr6_maize_dec, file = "Chr6_maize_dec.csv")
+write.csv(Chr7_maize_dec, file = "Chr7_maize_dec.csv")
+write.csv(Chr8_maize_dec, file = "Chr8_maize_dec.csv")
+write.csv(Chr9_maize_dec, file = "Chr9_maize_dec.csv") 
+write.csv(Chr10_maize_dec, file = "Chr10_maize_dec.csv")
+write.csv(Chr1_teo_dec, file = "Chr1_teo_dec.csv")
+write.csv(Chr2_teo_dec, file = "Chr2_teo_dec.csv")
+write.csv(Chr3_teo_dec, file = "Chr3_teo_dec.csv")
+write.csv(Chr4_teo_dec, file = "Chr4_teo_dec.csv")
+write.csv(Chr5_teo_dec, file = "Chr5_teo_dec.csv")
+write.csv(Chr6_teo_dec, file = "Chr6_teo_dec.csv")
+write.csv(Chr7_teo_dec, file = "Chr7_teo_dec.csv")
+write.csv(Chr8_teo_dec, file = "Chr8_teo_dec.csv")
+write.csv(Chr9_teo_dec, file = "Chr9_teo_dec.csv") 
+write.csv(Chr10_teo_dec, file = "Chr10_teo_dec.csv")
+write.csv(Chr1_teo_inc, file = "Chr1_teo_inc.csv")
+write.csv(Chr2_teo_inc, file = "Chr2_teo_inc.csv")
+write.csv(Chr3_teo_inc, file = "Chr3_teo_inc.csv")
+write.csv(Chr4_teo_inc, file = "Chr4_teo_inc.csv")
+write.csv(Chr5_teo_inc, file = "Chr5_teo_inc.csv")
+write.csv(Chr6_teo_inc, file = "Chr6_teo_inc.csv")
+write.csv(Chr7_teo_inc, file = "Chr7_teo_inc.csv")
+write.csv(Chr8_teo_inc, file = "Chr8_teo_inc.csv")
+write.csv(Chr9_teo_inc, file = "Chr9_teo_inc.csv") 
+write.csv(Chr10_teo_inc, file = "Chr10_teo_inc.csv")
+```
+## Data Visualization
+I downloaded necessary functions.
+```{r}
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+```
+## SNPs per chromosome
+```{r}
+melted_geno<-melt(genotype, id = c("Sample_ID", "Group"))
+melted_snps<-melt(trimmed_snps, id = c("SNP_ID", "Chromosome"))
+```
+```{r}
+joined_genotypes<-merge(melted_snps, melted_geno, by.x = 1, by.y = 3)
+```
+```{r}
+ggplot(joined_genotypes) + geom_bar(aes(x=Chromosome, fill=Chromosome)) + ggtitle("Number of SNPs/Chromosome") + labs(x="Chromosome",y="SNP Count")
+```
+The chromosome with the highest number of SNPs was chromosome 1.
+## Heterozygosity 
+Melted and joined the data for graphing.
+```{r}
+melted_geno<-melt(genotype, id = c("Sample_ID", "Group"))
+melted_snps<-melt(trimmed_snps, id = c("SNP_ID", "Chromosome"))
+colnames(melted_geno)[3:4] <- c("SNP_ID","SNP_Seq")
+joined_melted<-merge(melted_snps, melted_geno, by.x = 1, by.y = 3)
+joined_melted<-joined_melted[,-3]
+```
+I added SNP_Status column and coding ?/? to NA, Homozygous to Hom, and Heterozygous to Het
+
+<!-- In this one if you want to simplify some of the "or" statements "%in%" is a good option. Using it with which() will return which lines that statement is TRUE in. "NA" with be treated as a character string. You shouldn't use quotes if you want NA recognized by is.na().
+``
+joined_melted$SNP_Status<-NA
+joined_melted$SNP_Status<-joined_melted$SNP_Seq
+joined_melted$SNP_Status[joined_melted$SNP_Status=="?/?"]<- NA
+joined_melted$SNP_Status[which(joined_melted$SNP_Status %in% c("A/A", "C/C", "G/G", "T/T"))] <- "Hom"
+joined_melted$SNP_Status[joined_melted$SNP_Status!="Hom" & joined_melted$SNP_Status!="NA"] <- "Het"
+recoded_genotype<-joined_melted
+sort_recoded<-arrange(recoded_genotype, Group, Sample_ID)
+``
+
+-->
+```{r}
+joined_melted$SNP_Status<-"NA"
+joined_melted$SNP_Status<-joined_melted$SNP_Seq
+joined_melted$SNP_Status[joined_melted$SNP_Status=="?/?"]<- "NA"
+joined_melted$SNP_Status[joined_melted$SNP_Status=="A/A" | joined_melted$SNP_Status=="C/C" | joined_melted$SNP_Status=="G/G" | joined_melted$SNP_Status=="T/T"] <- "Hom"
+joined_melted$SNP_Status[joined_melted$SNP_Status!="Hom" & joined_melted$SNP_Status!="NA"] <- "Het"
+recoded_genotype<-joined_melted
+sort_recoded<-arrange(recoded_genotype, Group, Sample_ID)
+```
+Graphing
+
+<!-- Rotating the axis titles in the last graph might be something your interested in.
+``
+ggplot(recoded_genotype) + geom_bar(aes(x=SNP_Status, fill=Group), position = "fill") + ggtitle("Distribution of Groups Among SNPs") + labs(x="SNP Status",y="Group Contribution")
+ggplot(recoded_genotype) + geom_bar(aes(x=Group, fill=SNP_Status), position = "fill") + ggtitle("SNP Status Per Group") + labs(x="Group",y="SNP Status Counts")+theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1))
+``
+-->
+```{r}
+ggplot(recoded_genotype) + geom_bar(aes(x=SNP_Status, fill=Group), position = "fill") + ggtitle("Distribution of Groups Among SNPs") + labs(x="SNP Status",y="Group Contribution")
+ggplot(recoded_genotype) + geom_bar(aes(x=Group, fill=SNP_Status), position = "fill") + ggtitle("SNP Status Per Group") + labs(x="Group",y="SNP Status Counts")
+```
+## My Visualization
+I ploted homozygous loci by species group.
+```{r}
+ggplot(recoded_genotype) + geom_bar(aes(x=Group)) + ggtitle("Homozygous Loci vs. Species") + labs(x="Group",y="Hom")
+```
+
