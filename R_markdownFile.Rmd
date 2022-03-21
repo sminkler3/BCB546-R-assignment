@@ -33,8 +33,8 @@ trimmed_snps<-snps[c("SNP_ID","Chromosome", "Position")]
 ```
 Then I filtered the genotypes file for group IDs we were interested in for both maize and teosinte.
 ```{r}
-maize<-filter(genotype, "Group" == "ZMMIL" | "Group"== ZMMLR" | "Group" == "ZMMMR")
-teosinte<-filter(genotype, "Group"" == "ZMPBA" | "Group" == "ZMPIL" | "Group" == "ZMPJA")
+maize<-filter(genotype, Group == "ZMMIL" | Group== ZMMLR" | Group == "ZMMMR")
+teosinte<-filter(genotype, Group == "ZMPBA" | Group == "ZMPIL" | Group == "ZMPJA")
 ```
 Then I transposed the files together.
 ```{r}
