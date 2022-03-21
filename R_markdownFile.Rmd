@@ -10,9 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## R Markdown
 ## Data Inspection
-I first downloaded the files from Github for the assignment. 
+I first downloaded the files from Github for the assignment and set a working directory.
 
 ```{r}
+setwd("Desktop/BCB546_2022/R-assignment/")
 genotype<-read.delim("https://raw.githubusercontent.com/sminkler3/BCB546-Spring2022/main/assignments/UNIX_Assignment/fang_et_al_genotypes.txt", header=T)
 snps<-read.delim("https://raw.githubusercontent.com/sminkler3/BCB546-Spring2022/main/assignments/UNIX_Assignment/snp_position.txt", header=T)
 ```
